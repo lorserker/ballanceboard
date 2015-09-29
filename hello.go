@@ -3,31 +3,33 @@ package main
 import (
 	"fmt"
 	"github.com/lorserker/ballanceboard/logger"
-	"net"
+	"github.com/lorserker/ballanceboard/sensor/wimu"
+	"time"
 )
 
 func main() {
-	fmt.Println("Hello Ballance!!")
-
-	serverAddr, err := net.ResolveUDPAddr("udp", ":5555")
+	sens := wimu.New(":5555")
+	err := sens.Start()
 	if err != nil {
-		logger.Error().Println("error creating UDP address", err)
+		logger.Error().Println("error starting sensor", err)
+		return
 	}
 
-	conn, err := net.ListenUDP("udp", serverAddr)
-	if err != nil {
-		logger.Error().Println("error listening to UDP", err)
-	}
-	defer conn.Close()
-
-	buf := make([]byte, 1024)
-
-	for {
-		n, _, err := conn.ReadFromUDP(buf)
-		fmt.Println(string(buf[0:n]))
-
-		if err != nil {
-			logger.Error().Println("error reading", err)
+	go func() {
+		for {
+			select {
+			case acc := <-sens.Accelerometer:
+				fmt.Printf("acc %#v\n", acc)
+			case gyro := <-sens.Gyroscope:
+				fmt.Printf("gyro %#v\n", gyro)
+			case magn := <-sens.Magnetometer:
+				fmt.Printf("magn %#v\n", magn)
+			}
 		}
-	}
+
+	}()
+
+	time.Sleep(60 * time.Second)
+
+	sens.Done()
 }
