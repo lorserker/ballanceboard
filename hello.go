@@ -16,20 +16,16 @@ func main() {
 	}
 
 	go func() {
-		for {
-			select {
-			case acc := <-sens.Accelerometer:
-				fmt.Printf("acc %#v\n", acc)
-			case gyro := <-sens.Gyroscope:
-				fmt.Printf("gyro %#v\n", gyro)
-			case magn := <-sens.Magnetometer:
-				fmt.Printf("magn %#v\n", magn)
-			}
+		for m := range sens.Accelerometer {
+			fmt.Printf("%#v\n", m)
 		}
-
 	}()
 
-	time.Sleep(60 * time.Second)
+	// we stop the sensor ahead of time
+	go func() {
+		<-time.After(10 * time.Second)
+		sens.Done()
+	}()
 
-	sens.Done()
+	time.Sleep(20 * time.Second)
 }

@@ -10,26 +10,33 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 const N_BUFFER int = 128
+const SEND_TIMEOUT int = 200
 
 type Sensor struct {
-	Accelerometer chan sensor.Measurement
-	Gyroscope     chan sensor.Measurement
-	Magnetometer  chan sensor.Measurement
+	Accelerometer chan *sensor.Measurement
+	Gyroscope     chan *sensor.Measurement
+	Magnetometer  chan *sensor.Measurement
+
+	wg sync.WaitGroup
 
 	port string
 	conn *net.UDPConn
 
-	done chan struct{}
+	done          chan struct{}
+	doneUdpServer chan struct{}
 }
 
 func New(port string) *Sensor {
-	accelChan := make(chan sensor.Measurement, N_BUFFER)
-	gyroChan := make(chan sensor.Measurement, N_BUFFER)
-	magnetChan := make(chan sensor.Measurement, N_BUFFER)
+	accelChan := make(chan *sensor.Measurement, N_BUFFER)
+	gyroChan := make(chan *sensor.Measurement, N_BUFFER)
+	magnetChan := make(chan *sensor.Measurement, N_BUFFER)
 	doneChan := make(chan struct{})
+	doneUdpServerChan := make(chan struct{})
 
 	return &Sensor{
 		Accelerometer: accelChan,
@@ -38,6 +45,7 @@ func New(port string) *Sensor {
 		port:          port,
 		conn:          nil,
 		done:          doneChan,
+		doneUdpServer: doneUdpServerChan,
 	}
 }
 
@@ -57,7 +65,7 @@ func (sens *Sensor) Start() error {
 
 	logger.Info().Println("connection created")
 
-	datachan := readData(conn)
+	datachan := sens.readData()
 
 	go func() {
 		for {
@@ -93,32 +101,51 @@ func (sens *Sensor) handleData(data res) error {
 		if err != nil {
 			return err
 		}
-		sens.Accelerometer <- sensor.Measurement{From: ip, X: x, Y: y, Z: z}
+		sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Accelerometer)
 
 		if len(cols) >= 9 {
 			x, y, z, err = parseXYZ(cols[6:9])
 			if err != nil {
 				return err
 			}
-			sens.Gyroscope <- sensor.Measurement{From: ip, X: x, Y: y, Z: z}
+			sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Gyroscope)
 
 			if len(cols) >= 13 {
 				x, y, z, err = parseXYZ(cols[10:13])
 				if err != nil {
 					return err
 				}
-				sens.Magnetometer <- sensor.Measurement{From: ip, X: x, Y: y, Z: z}
+				sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Magnetometer)
 			}
 		}
 	}
 	return nil
 }
 
+func (sens *Sensor) send(m *sensor.Measurement, c chan *sensor.Measurement) {
+	sens.wg.Add(1)
+	go func() {
+		defer sens.wg.Done()
+
+		select {
+		case c <- m:
+			return
+		case <-time.After(time.Duration(SEND_TIMEOUT) * time.Millisecond):
+			return
+		}
+	}()
+}
+
 func (sens *Sensor) handleDone() error {
+	// we wait for all pending sends to happen
+	sens.wg.Wait()
+	// we close the udp server
+	sens.doneUdpServer <- struct{}{}
 	if err := sens.conn.Close(); err != nil {
 		logger.Error().Println("error closing UDP connection", err)
 		return err
 	}
+	// we close the channels
 	close(sens.Accelerometer)
 	close(sens.Gyroscope)
 	close(sens.Magnetometer)
@@ -130,18 +157,23 @@ type res struct {
 	Data []byte
 }
 
-func readData(conn *net.UDPConn) chan res {
+func (sens *Sensor) readData() chan res {
 	output := make(chan res, N_BUFFER)
 
 	go func() {
 		buf := make([]byte, 1024)
 		for {
-			n, addr, err := conn.ReadFromUDP(buf)
-			if err != nil {
-				logger.Error().Println("error reading from udp", err)
+			select {
+			case <-sens.doneUdpServer:
 				return
+			default:
+				n, addr, err := sens.conn.ReadFromUDP(buf)
+				if err != nil {
+					logger.Error().Println("error reading from udp", err)
+					return
+				}
+				output <- res{From: addr, Data: buf[:n]}
 			}
-			output <- res{From: addr, Data: buf[:n]}
 		}
 	}()
 
