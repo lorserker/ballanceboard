@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>WebSocket Sensor Example</title>
+    </head>
+    <body>
+        <h1>WebSocket Sensor Example</h1>
+        <script type="text/javascript">
+            (function() {
+                
+                var conn = new WebSocket("ws://localhost:8000/ws");
+                conn.onclose = function(evt) {
+                    console.log('Connection closed');
+                }
+                conn.onmessage = function(evt) {
+                    console.log(evt.data);
+                }
+            })();
+        </script>
+    </body>
+</html>

@@ -101,21 +101,21 @@ func (sens *Sensor) handleData(data res) error {
 		if err != nil {
 			return err
 		}
-		sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Accelerometer)
+		sens.send(&sensor.Measurement{Type: sensor.ACCELEROMETER, From: ip, X: x, Y: y, Z: z}, sens.Accelerometer)
 
 		if len(cols) >= 9 {
 			x, y, z, err = parseXYZ(cols[6:9])
 			if err != nil {
 				return err
 			}
-			sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Gyroscope)
+			sens.send(&sensor.Measurement{Type: sensor.GYROSCOPE, From: ip, X: x, Y: y, Z: z}, sens.Gyroscope)
 
 			if len(cols) >= 13 {
 				x, y, z, err = parseXYZ(cols[10:13])
 				if err != nil {
 					return err
 				}
-				sens.send(&sensor.Measurement{From: ip, X: x, Y: y, Z: z}, sens.Magnetometer)
+				sens.send(&sensor.Measurement{Type: sensor.MAGNETOMETER, From: ip, X: x, Y: y, Z: z}, sens.Magnetometer)
 			}
 		}
 	}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ballance</title>
+        <style type="text/css">
+            body {
+                background: black;
+            }
+            canvas {
+                position: absolute;
+                top: 2px;
+                left: 360px;
+                background: transparent;
+            }
+
+            #background {
+                z-index: -2;
+            }
+
+            #hole {
+                z-index: -1;
+            }
+
+            #ball {
+                z-index: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="background" width="640" height="640"></canvas>
+        <canvas id="hole" width="640" height="640"></canvas>
+        <canvas id="ball" width="640" height="640"></canvas>
+
+        <script type="text/javascript" src="ballance.js"></script>
+    </body>
+</html>
