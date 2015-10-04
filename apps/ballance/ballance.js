@@ -53,7 +53,6 @@ function BlackHole() {
         this.radius = 32;
         this.x = Math.floor(Math.random() * (this.canvas.width - 2 * this.radius)) + this.radius;
         this.y = Math.floor(Math.random() * (this.canvas.height - 2 * this.radius)) + this.radius;;
-        this.draw();
     } 
 
     this.draw = function() {
@@ -65,6 +64,27 @@ function BlackHole() {
 
     this.clear = function() {
         this.ctx.clearRect(this.x - this.radius, this.y - this.radius, 2*this.radius, 2*this.radius);
+    }
+
+    this.move = function(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+
+        if(this.x < this.radius) {
+            this.x = this.radius;
+        }
+
+        if(this.x > this.canvas.width - this.radius) {
+            this.x = this.canvas.width - this.radius;
+        }
+
+        if(this.y < this.radius) {
+            this.y = this.radius;
+        }
+
+        if(this.y > this.canvas.height - this.radius) {
+            this.y = this.canvas.height - this.radius;
+        }
     }
 
     this.swallows = function(other) {
@@ -134,25 +154,32 @@ function Game() {
     }
 }
 
-var input = {dx: 0, dy: 0};
+var inputBall = {dx: 0, dy: 0};
+var inputHole = {dx: 0, dy: 0};
+
+var ballId = null;
 
 
 function animate() {
     requestAnimationFrame(animate);
 
+    game.hole.clear();
     game.ball.clear();
 
     if(game.hole.swallows(game.ball)) {
         game.hole.clear();
+        game.ball.clear();
         game.init();
     }
 
-    game.ball.move(input.dx, input.dy);
+    game.ball.move(inputBall.dx, inputBall.dy);
+    game.hole.move(inputHole.dx, inputHole.dy);
     render();
 }
 
 function render() {
     game.ball.draw();
+    game.hole.draw();
 }
 
 
@@ -174,9 +201,20 @@ function onClose(evt) {
 
 function onMessage(evt) {
     var accelData = JSON.parse(evt.data);
+
+    fromId = accelData.From;
+    if(!ballId) {
+        ballId = fromId;
+    }
+
     accelData.X *= -1;
-    input.dx = Math.round(3*accelData.X);
-    input.dy = Math.round(3*accelData.Y);
+    if(ballId == fromId) {
+        inputBall.dx = Math.round(2*accelData.X);
+        inputBall.dy = Math.round(2*accelData.Y);
+    } else {
+        inputHole.dx = Math.round(2*accelData.X);
+        inputHole.dy = Math.round(2*accelData.Y);
+    }
 }
 
 function onError(evt) {
