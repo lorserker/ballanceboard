@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Button Soccer</title>
+        <style type="text/css">
+            body {
+                background: black;
+            }
+            canvas {
+                position: absolute;
+                top: 2px;
+                left: 360px;
+                background: transparent;
+            }
+
+            #background {
+                z-index: -2;
+            }
+
+            #ball {
+                z-index: 0;
+            }
+
+            #scoreRed {
+                position:absolute;
+                top: 360px;
+                left: 300px;
+                color: white;
+                font-size: 64px;
+            }
+
+            #scoreBlue {
+                position:absolute;
+                top: 360px;
+                left: 1675px;
+                color: white;
+                font-size: 64px;
+            }
+        </style>
+    </head>
+    <body id="body">
+        <h1 id="scoreRed">0</h1>
+        <h1 id="scoreBlue">0</h1>
+        <canvas id="background" width="1307" height="878"></canvas>
+        <canvas id="ball" width="1307" height="878"></canvas>
+
+        <script type="text/javascript" src="buttonsoccer.js"></script>
+    </body>
+</html>
