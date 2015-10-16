@@ -25,8 +25,4 @@ the data is in this format:
 {"Type":"accelerometer","From":"192.168.100.82","X":-0.531,"Y":-0.341,"Z":9.834}
 ```
 
-Some example games which use the accelerometer data as input are [here](apps/). Just open the html file in the browser with the server address as a parameter, like this:
-
-```
-example.html?server=localhost:8000
-```
+Some example games which use the accelerometer data as input are [here](apps/)
