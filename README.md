@@ -14,9 +14,6 @@ From the client you can read the sensor data form websocket:
 
 ```javascript
 var conn = new WebSocket("ws://localhost:8000/ws");
-conn.onclose = function(evt) {
-    console.log('Connection closed');
-}
 conn.onmessage = function(evt) {
     console.log(evt.data);
 }
