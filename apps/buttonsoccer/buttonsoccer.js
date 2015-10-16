@@ -129,8 +129,8 @@ function Ball() {
     this.reset = function() {
         //this.x = Math.floor(Math.random() * (this.canvas.width - this.width));
         //this.y = Math.floor(Math.random() * (this.canvas.height - this.height));
-        this.x = 648;
-        this.y = 436;
+        this.x = 638;
+        this.y = 433;
         this.dx = 0;
         this.dy = 0;
     }
@@ -238,8 +238,7 @@ function Game() {
         this.ball = new Ball();
         this.ball.init(ballCanvas);
 
-        this.teamRed = []
-        this.teamBlue = []
+        this.teamSize = {"red": 0, "blue": 0};
 
         this.scoreRed = 0;
         this.scoreBlue = 0;
@@ -252,6 +251,9 @@ function Game() {
     }
 
     this.addPlayer = function(playerId) {
+        if(this.players.length >= 4) {
+            return;
+        }
         var body = document.getElementById("body");
         var newPlayerCanvas = document.createElement("canvas");
         newPlayerCanvas.id = "player_" + playerId;
@@ -260,62 +262,42 @@ function Game() {
         body.appendChild(newPlayerCanvas);
 
         var teamColor = "red";
-        var team = this.teamRed;
-
-        if(this.teamRed.length > this.teamBlue.length) {
+        if(this.teamSize.red > this.teamSize.blue) {
             teamColor = "blue";
-            team = this.teamBlue;
         }
 
         newPlayer = new Player();
         newPlayer.init(newPlayerCanvas, teamColor);
         newPlayer.updateVelocity(10, 10);
-        team.push(newPlayer);
-        this.players[playerId] = newPlayer;
+        this.players[playerId] = {'player': newPlayer, 'team': teamColor, 'lastUpdate': (new Date()).getTime()};
+        this.teamSize[teamColor]++;
     }
 
     this.clearPlayers = function() {
-        this.clearTeam(this.teamRed);
-        this.clearTeam(this.teamBlue);
-    }
-
-    this.clearTeam = function(team) {
-        for(var i = 0; i < team.length; i++) {
-            team[i].clear();
+        for(playerId in this.players) {
+            this.players[playerId].player.clear();
         }
     }
 
     this.drawPlayers = function() {
-        this.drawTeam(this.teamRed);
-        this.drawTeam(this.teamBlue);
-    }
-
-    this.drawTeam = function(team) {
-        for(var i = 0; i < team.length; i++) {
-            team[i].draw();
+        for(playerId in this.players) {
+            this.players[playerId].player.draw();
         }
     }
 
     this.movePlayers = function() {
-        // for(var i = 0; i < this.teamRed.length; i++) {
-        //     this.teamRed[i].move();
-        // }
-        // for(var i = 0; i < this.teamBlue.length; i++) {
-        //     this.teamBlue[i].move();
-        // }
-
         for(playerId in this.players) {
             var anyCollisions = false;
             for(otherPlayerId in this.players) {
                 if(playerId == otherPlayerId) {
                     continue;
                 }
-                if(this.players[playerId].collideWith(this.players[otherPlayerId])) {
+                if(this.players[playerId].player.collideWith(this.players[otherPlayerId].player)) {
                     anyCollisions = true;
                 }
             }
             if(!anyCollisions) {
-                this.players[playerId].move();
+                this.players[playerId].player.move();
             }
         }
     }
@@ -323,28 +305,46 @@ function Game() {
     this.friction = function() {
         this.ball.friction();
 
-        for(var i = 0; i < this.teamRed.length; i++) {
-            this.teamRed[i].friction();
-        }
-
-        for(var i = 0; i < this.teamBlue.length; i++) {
-            this.teamBlue[i].friction();
+        for(playerId in this.players) {
+            this.players[playerId].player.friction();
         }
     }
 
     this.handleInput = function(from, x, y) {
+        var now = (new Date()).getTime();
         var playerId = from;
         if(playerId in this.players) {
-            var player = this.players[playerId];
+            var player = this.players[playerId].player;
             player.updateVelocity(x, y);
+            this.players[playerId].lastUpdate = now;
         } else {
             this.addPlayer(playerId);
+        }
+    }
+
+    this.deleteStalePlayers = function() {
+        var now = (new Date()).getTime();
+        var playersToDelete = [];
+        for(playerId in this.players) {
+            if(now - this.players[playerId].lastUpdate > 5000) {
+                playersToDelete.push(playerId);
+            }
+        }
+        for(var i = 0; i < playersToDelete.length; i++) {
+            this.players[playersToDelete[i]].player.clear();
+            this.teamSize[this.players[playersToDelete[i]].team]--;
+            delete this.players[playersToDelete[i]];
         }
     }
 
     this.updateScore = function(incRed, incBlue) {
         this.scoreRed += incRed;
         this.scoreBlue += incBlue;
+
+        if(this.scoreRed >= 10 || this.scoreBlue >= 10) {
+            this.scoreRed = 0;
+            this.scoreBlue = 0;
+        }
 
         document.getElementById("scoreRed").innerHTML = "" + this.scoreRed;
         document.getElementById("scoreBlue").innerHTML = "" + this.scoreBlue;
@@ -353,20 +353,11 @@ function Game() {
     this.resetPositions = function() {
         this.ball.reset();
 
-        for(var i = 0; i < this.teamRed.length; i++) {
-            this.teamRed[i].reset();
-        }
-
-        for(var i = 0; i < this.teamBlue.length; i++) {
-            this.teamBlue[i].reset();
+        for(playerId in this.players) {
+            this.players[playerId].player.reset();
         }
     }
 }
-
-var inputBall = {dx: 0, dy: 0};
-var inputHole = {dx: 0, dy: 0};
-
-var ballId = null;
 
 
 function animate() {
@@ -389,7 +380,7 @@ function animate() {
     }
 
     for(playerId in game.players) {
-        player = game.players[playerId];
+        var player = game.players[playerId].player;
         if(game.ball.collidePlayer(player)) {
             break;
         }
@@ -403,6 +394,8 @@ function animate() {
 
     game.friction();
 
+    game.deleteStalePlayers();
+
     render();
 }
 
@@ -410,7 +403,6 @@ function render() {
     game.ball.draw();
     game.drawPlayers();
 }
-
 
 function wsConnect() {
     var serverAddr = location.search.split("server=")[1];
