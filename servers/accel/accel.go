@@ -14,6 +14,6 @@ func main() {
 		return
 	}
 
-	wsServer := wsock.New("localhost:8000", "/ws", sens.Accelerometer)
+	wsServer := wsock.New("0.0.0.0:8000", "/ws", sens.Accelerometer)
 	wsServer.Start()
 }
