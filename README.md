@@ -1,3 +1,5 @@
+#Balance Board
+
 ![Demo](demo.gif)
 
 Install this android app [https://play.google.com/store/apps/details?id=org.zwiener.wimu]( https://play.google.com/store/apps/details?id=org.zwiener.wimu)
@@ -7,7 +9,7 @@ Start the app to begin sending sensor data through UDP.
 The server reads the sensor data from udp and sends it forward to all connected websocket clients. You start the server like this:
 
 ```
-go run servers/accel.go
+go run servers/accel/accel.go
 ```
 
 From the client you can read the sensor data form websocket:
