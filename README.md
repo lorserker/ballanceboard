@@ -1,4 +1,5 @@
 #Balance Board
+Attach an accelerometer to a balance board, and use it as a controller for video games.  Makes exercise much more fun.
 
 ![Demo](demo.gif)
 
