@@ -1,4 +1,4 @@
-
+![Demo](demo.gif)
 
 Install this android app [https://play.google.com/store/apps/details?id=org.zwiener.wimu]( https://play.google.com/store/apps/details?id=org.zwiener.wimu)
 
