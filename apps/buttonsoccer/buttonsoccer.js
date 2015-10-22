@@ -431,8 +431,8 @@ function onMessage(evt) {
     var accelData = JSON.parse(evt.data);
 
     accelData.X *= -1;
-    var x = 2*accelData.X;
-    var y = 2*accelData.Y;
+    var x = 3*accelData.X;
+    var y = 3*accelData.Y;
 
     game.handleInput(accelData.From, x, y);
 }
